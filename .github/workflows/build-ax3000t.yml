@@ -1,61 +1,73 @@
-name: Build AX3000T
+name: Build Xiaomi AX3000T
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: AX3000T ImmortalWrt
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
         with:
           ref: openwrt-24.10-6.6
+          fetch-depth: 1
 
-      - name: Install dependencies
+      - name: Install build environment
+        shell: bash
         run: |
-          sudo apt update
-          sudo apt install -y \
-            build-essential clang flex bison gawk gettext \
-            gcc-multilib g++-multilib git libncurses-dev \
-            libssl-dev python3 rsync unzip zlib1g-dev \
-            file wget
+          set -euo pipefail
+          sudo bash -c 'bash <(curl -fsSL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
 
       - name: Update feeds
+        shell: bash
         run: |
+          set -euo pipefail
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
       - name: Add PassWall
+        shell: bash
         run: |
-          git clone --depth=1 \
+          set -euo pipefail
+          rm -rf package/passwall
+          git clone --depth=1 --branch main \
             https://github.com/Openwrt-Passwall/openwrt-passwall.git \
             package/passwall
 
-      - name: Configure
+      - name: Prepare configuration
+        shell: bash
         run: |
-          cp defconfig/mt7981-ax3000.config .config
-
-          sed -i '/CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_/d' .config
-          sed -i '/CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_/d' .config
-
-          cat >> .config <<'EOF'
-          CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=y
-          CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=""
-          CONFIG_PACKAGE_luci-app-passwall=y
-          CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray=y
-          EOF
-
+          set -euo pipefail
+          cp defconfig/mt7981-ax3000t-passwall.config .config
           make defconfig
 
-      - name: Download
-        run: make download -j2
+          echo '--- Selected target ---'
+          grep -E 'CONFIG_TARGET_(mediatek|DEVICE_mediatek_filogic_DEVICE_xiaomi)' .config || true
+          echo '--- PassWall ---'
+          grep -E 'CONFIG_PACKAGE_luci-app-passwall' .config || true
 
-      - name: Build
-        run: make -j2 V=s
+      - name: Download sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          make download -j2
 
-      - name: Upload
+      - name: Compile firmware
+        shell: bash
+        run: |
+          set -euo pipefail
+          make -j2 V=s
+
+      - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: ax3000t-firmware
-          path: bin/targets/mediatek/filogic/*
+          name: xiaomi-ax3000t-passwall
+          if-no-files-found: error
+          path: |
+            bin/targets/mediatek/filogic/*
