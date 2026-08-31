@@ -1,0 +1,61 @@
+name: Build AX3000T
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: openwrt-24.10-6.6
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential clang flex bison gawk gettext \
+            gcc-multilib g++-multilib git libncurses-dev \
+            libssl-dev python3 rsync unzip zlib1g-dev \
+            file wget
+
+      - name: Update feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Add PassWall
+        run: |
+          git clone --depth=1 \
+            https://github.com/Openwrt-Passwall/openwrt-passwall.git \
+            package/passwall
+
+      - name: Configure
+        run: |
+          cp defconfig/mt7981-ax3000.config .config
+
+          sed -i '/CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_/d' .config
+          sed -i '/CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_/d' .config
+
+          cat >> .config <<'EOF'
+          CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=y
+          CONFIG_TARGET_DEVICE_PACKAGES_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=""
+          CONFIG_PACKAGE_luci-app-passwall=y
+          CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray=y
+          EOF
+
+          make defconfig
+
+      - name: Download
+        run: make download -j2
+
+      - name: Build
+        run: make -j2 V=s
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ax3000t-firmware
+          path: bin/targets/mediatek/filogic/*
