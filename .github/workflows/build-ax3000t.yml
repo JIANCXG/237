@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cp defconfig/mt7981-ax3000t.config
+          cp defconfig/mt7981-ax3000t.config .config
           make defconfig
 
           echo '--- Selected target ---'
