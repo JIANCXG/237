@@ -42,9 +42,13 @@ jobs:
           test "$(grep -c '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_.*=y$' .config)" -eq 1
 
           # Fail before compiling if configuration resolution changes the Wi-Fi stack.
-          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall PACKAGE_luci-i18n-passwall-zh-cn PACKAGE_luci-app-passwall_INCLUDE_Xray PACKAGE_xray-core; do
+          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall PACKAGE_luci-i18n-passwall-zh-cn PACKAGE_luci-app-passwall_INCLUDE_Xray PACKAGE_xray-core PACKAGE_luci-ssl-openssl PACKAGE_libustream-openssl; do
             grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
           done
+          if grep -E '^CONFIG_PACKAGE_(luci-ssl|libustream-mbedtls|libustream-wolfssl)=y$' .config; then
+            echo "Conflicting LuCI HTTPS/libustream backend selected"
+            exit 1
+          fi
           if grep -E '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl)=y$' .config; then
             echo "Unexpected mt76 Wi-Fi packages selected for installation"
             exit 1
@@ -70,9 +74,11 @@ jobs:
           # TARGET_MULTI_PROFILE emits a target-level manifest without a device suffix.
           manifests=(bin/targets/mediatek/filogic/*.manifest)
           test "${#manifests[@]}" -eq 1
-          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core; do
+          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core luci-ssl-openssl; do
             grep -q "^${package} " "${manifests[0]}" || { echo "Missing firmware package: $package"; exit 1; }
           done
+          grep -Eq '^libustream-openssl[^ ]* ' "${manifests[0]}"
+          test "$(grep -Ec '^libustream-(openssl|mbedtls|wolfssl)[^ ]* ' "${manifests[0]}")" -eq 1
           if grep -Eq '^(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl) ' "${manifests[0]}"; then
             echo "Unexpected mt76 Wi-Fi packages in firmware"
             exit 1

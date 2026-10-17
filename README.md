@@ -8,6 +8,7 @@
 - 平台：MediaTek Filogic / MT7981，Linux 6.6 系列内核。
 - 设备：`xiaomi_mi-router-ax3000t`，原厂分区布局。
 - 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
+- LuCI HTTPS：统一使用 OpenSSL 后端。
 - 包含中文版 PassWall，使用 Xray 核心。
 - 不包含 Samba4 文件共享、网络唤醒和 WireGuard。
 - 开启 initramfs，同时生成首次迁移镜像和后续升级镜像。
