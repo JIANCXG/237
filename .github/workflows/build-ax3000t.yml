@@ -43,11 +43,34 @@ jobs:
 
           make defconfig
 
+          # Fail before compiling if configuration resolution changes the Wi-Fi stack.
+          for symbol in TARGET_mediatek_filogic MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg; do
+            grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
+          done
+          if grep -Eq '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl)=[ym]$' .config; then
+            echo "Unexpected mt76 Wi-Fi packages enabled"
+            exit 1
+          fi
+          cp .config ax3000t.build.config
+
       - name: Download sources
         run: make download -j2
 
       - name: Compile
         run: make -j2 V=s
+
+      - name: Verify firmware Wi-Fi packages
+        run: |
+          shopt -s nullglob
+          manifests=(bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t.manifest)
+          test "${#manifests[@]}" -eq 1
+          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg; do
+            grep -q "^${package} " "${manifests[0]}" || { echo "Missing firmware package: $package"; exit 1; }
+          done
+          if grep -Eq '^(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl) ' "${manifests[0]}"; then
+            echo "Unexpected mt76 Wi-Fi packages in firmware"
+            exit 1
+          fi
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
@@ -55,3 +78,4 @@ jobs:
           name: xiaomi-ax3000t-firmware
           path: |
             bin/targets/mediatek/filogic/*
+            ax3000t.build.config

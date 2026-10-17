@@ -8,6 +8,19 @@
 	compatible = "xiaomi,mi-router-ax3000t", "mediatek,mt7981";
 };
 
+/* The vendor driver binds to wbsys instead of the mt76 wifi node. */
+&wifi {
+	status = "disabled";
+};
+
+&wbsys {
+	status = "okay";
+};
+
+&consys {
+	status = "okay";
+};
+
 &spi_nand {
 	mediatek,nmbm;
 	mediatek,bmt-max-ratio = <1>;
