@@ -62,7 +62,8 @@ To build your own firmware you need a GNU/Linux, BSD or macOS system (case sensi
      
      ```
      # MT7981
-     cp -f defconfig/mt7981-ax3000.config .config
+     # Xiaomi Mi Router AX3000T (stock layout, MediaTek mt_wifi)
+     cp -f defconfig/mt7981-ax3000t.config .config
 
      # MT7986
      cp -f defconfig/mt7986-ax6000.config .config
