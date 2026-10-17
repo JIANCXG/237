@@ -8,7 +8,8 @@
 - 平台：MediaTek Filogic / MT7981，Linux 6.6 系列内核。
 - 设备：`xiaomi_mi-router-ax3000t`，原厂分区布局。
 - 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
-- 不包含 PassWall。
+- 包含中文版 PassWall，使用 Xray 核心。
+- 不包含 Samba4 文件共享、网络唤醒和 WireGuard。
 - 开启 initramfs，同时生成首次迁移镜像和后续升级镜像。
 
 其他机型的预设配置已删除。保留上游的构建系统、软件包和底层平台源码，实际编译仅选择 AX3000T。
@@ -20,7 +21,7 @@
 3. 点击 **Run workflow**，使用 `openwrt-24.10-6.6` 分支。
 4. 编译成功后，下载 **xiaomi-ax3000t-firmware** 产物。
 
-工作流从唯一预设生成 `.config`，并检查设备选择、厂商无线驱动、PassWall 禁用状态以及首次迁移镜像是否生成。
+工作流从唯一预设生成 `.config`，并检查设备选择、厂商无线驱动、PassWall 和 Xray 是否包含、Samba4 等已移除功能是否禁用，以及首次迁移镜像是否生成。
 
 产物包括：
 

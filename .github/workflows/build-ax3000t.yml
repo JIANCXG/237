@@ -38,15 +38,15 @@ jobs:
           test "$(grep -c '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_.*=y$' .config)" -eq 1
 
           # Fail before compiling if configuration resolution changes the Wi-Fi stack.
-          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg; do
+          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall PACKAGE_luci-i18n-passwall-zh-cn PACKAGE_luci-app-passwall_INCLUDE_Xray PACKAGE_xray-core; do
             grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
           done
           if grep -Eq '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl)=[ym]$' .config; then
             echo "Unexpected mt76 Wi-Fi packages enabled"
             exit 1
           fi
-          if grep -Eq '^CONFIG_PACKAGE_[^=]*passwall[^=]*=[ym]$' .config; then
-            echo "PassWall must be disabled"
+          if grep -Eq '^CONFIG_PACKAGE_(luci-app-samba4|luci-i18n-samba4[^=]*|samba4[^=]*)=[ym]$' .config; then
+            echo "Samba4 must be disabled"
             exit 1
           fi
           cp .config ax3000t.build.config
@@ -68,15 +68,15 @@ jobs:
           # TARGET_MULTI_PROFILE emits a target-level manifest without a device suffix.
           manifests=(bin/targets/mediatek/filogic/*.manifest)
           test "${#manifests[@]}" -eq 1
-          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg; do
+          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core; do
             grep -q "^${package} " "${manifests[0]}" || { echo "Missing firmware package: $package"; exit 1; }
           done
           if grep -Eq '^(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl) ' "${manifests[0]}"; then
             echo "Unexpected mt76 Wi-Fi packages in firmware"
             exit 1
           fi
-          if grep -Eq '^[^ ]*passwall[^ ]* ' "${manifests[0]}"; then
-            echo "Unexpected PassWall package in firmware"
+          if grep -Eq '^(luci-app-samba4|luci-i18n-samba4[^ ]*|samba4[^ ]*) ' "${manifests[0]}"; then
+            echo "Unexpected Samba4 package in firmware"
             exit 1
           fi
           factory_images=(bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t-initramfs-factory.ubi)
