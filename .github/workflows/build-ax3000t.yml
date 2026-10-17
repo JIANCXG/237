@@ -81,6 +81,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: xiaomi-ax3000t-firmware
+          if-no-files-found: error
           path: |
-            bin/targets/mediatek/filogic/*
+            bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t*
+            bin/targets/mediatek/filogic/sha256sums
+            bin/targets/mediatek/filogic/profiles.json
+            bin/targets/mediatek/filogic/*.buildinfo
             ax3000t.build.config

@@ -1,102 +1,55 @@
-<img src="https://avatars.githubusercontent.com/u/53193414?s=200&v=4" alt="logo" width="200" height="200" align="right">
+# 小米 AX3000T 固件编译
 
-# Project ImmortalWrt
+本仓库基于 [padavanonly/immortalwrt-mt798x-6.6](https://github.com/padavanonly/immortalwrt-mt798x-6.6)，仅维护小米 AX3000T 原厂分区布局的编译配置。
 
-ImmortalWrt is a fork of [OpenWrt](https://openwrt.org), with more packages ported, more devices supported, default optimized profiles and localization modifications for mainland China users.<br/>
-Compared to upstream, we allow to use (non-upstreamable) modifications/hacks to provide better feature/performance/support.
+## 编译配置
 
-Default login address: http://192.168.6.1 or http://immortalwrt.lan, username: __root__, password: _none_.
+- 唯一预设：[`defconfig/mt7981-ax3000t.config`](defconfig/mt7981-ax3000t.config)。
+- 平台：MediaTek Filogic / MT7981，Linux 6.6 系列内核。
+- 设备：`xiaomi_mi-router-ax3000t`，原厂分区布局。
+- 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
+- 不包含 PassWall。
+- 开启 initramfs，同时生成首次迁移镜像和后续升级镜像。
 
-## Download
-Built firmware images are available for many architectures and come with a package selection to be used as WiFi home router. To quickly find a factory image usable to migrate from a vendor stock firmware to ImmortalWrt, try the *Firmware Selector*.
+其他机型的预设配置已删除。保留上游的构建系统、软件包和底层平台源码，实际编译仅选择 AX3000T。
 
-- [ImmortalWrt Firmware Selector](https://firmware-selector.immortalwrt.org/)
+## GitHub Actions 编译
 
-If your device is supported, please follow the **Info** link to see install instructions or consult the support resources listed below.
+1. 打开本仓库的 **Actions** 页面。
+2. 选择 **Build AX3000T Firmware**。
+3. 点击 **Run workflow**，使用 `openwrt-24.10-6.6` 分支。
+4. 编译成功后，下载 **xiaomi-ax3000t-firmware** 产物。
 
-## Development
-To build your own firmware you need a GNU/Linux, BSD or macOS system (case sensitive filesystem required). Cygwin is unsupported because of the lack of a case sensitive file system.<br/>
+工作流从唯一预设生成 `.config`，并检查设备选择、厂商无线驱动、PassWall 禁用状态以及首次迁移镜像是否生成。
 
-  ### Requirements
-  To build with this project, Debian 11 is preferred. And you need use the CPU based on AMD64 architecture, with at least 4GB RAM and 25 GB available disk space. Make sure the __Internet__ is accessible.
+产物包括：
 
-  The following tools are needed to compile ImmortalWrt, the package names vary between distributions.
+- `*xiaomi_mi-router-ax3000t-initramfs-factory.ubi`：首次迁移流程所需镜像。
+- `*xiaomi_mi-router-ax3000t-squashfs-sysupgrade.bin`：对应布局下的系统升级镜像。
+- AX3000T 的其他生成文件、校验信息及构建信息。
+- `ax3000t.build.config`：编译实际使用的完整配置。
 
-  - Here is an example for Debian/Ubuntu users:<br/>
-    - Method 1:
-      <details>
-        <summary>Setup dependencies via APT</summary>
+这些镜像针对原厂分区布局。使用 MTK U-Boot 或 OpenWrt U-Boot 改版分区的设备不属于当前配置目标；首次迁移镜像也不是小米官方网页升级包。
 
-        ```bash
-        sudo apt update -y
-        sudo apt full-upgrade -y
-        sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
-          bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
-          g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
-          libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev \
-          libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano \
-          ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils \
-          python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs \
-          upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
-        ```
-      </details>
-    - Method 2:
-      ```bash
-      sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.org/init_build_environment.sh)'
-      ```
+## 本地编译
 
-  Note:
-  - Do everything as an unprivileged user, not root, without sudo.
-  - Using CPUs based on other architectures should be fine to compile ImmortalWrt, but more hacks are needed - No warranty at all.
-  - You must __not__ have spaces or non-ascii characters in PATH or in the work folders on the drive.
-  - If you're using Windows Subsystem for Linux (or WSL), removing Windows folders from PATH is required, please see [Build system setup WSL](https://openwrt.org/docs/guide-developer/build-system/wsl) documentation.
-  - Using macOS as the host build OS is __not__ recommended. No warranty at all. You can get tips from [Build system setup macOS](https://openwrt.org/docs/guide-developer/build-system/buildroot.exigence.macosx) documentation.
-  - For more details, please see [Build system setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem) documentation.
+使用安装好构建依赖的 Linux 环境，依赖列表可参考[编译工作流](.github/workflows/build-ax3000t.yml)。源码目录需位于区分大小写的文件系统中，路径不含空格或中文。
 
-  ### Quickstart
-  1. Run `git clone -b openwrt-24.10-6.6 --single-branch --filter=blob:none https://github.com/padavanonly/immortalwrt-mt798x-24.10 immortalwrt-mt798x-24.10` to clone the source code.
-  2. Run `cd immortalwrt-mt798x-24.10` to enter source directory.
-  3. Run `./scripts/feeds update -a` to obtain all the latest package definitions defined in feeds.conf / feeds.conf.default
-  4. Run `./scripts/feeds install -a` to install symlinks for all obtained packages into package/feeds/
-  5. Copy the configuration file for your device from the `defconfig` directory to the project root directory and rename it `.config`
-     
-     ```
-     # MT7981
-     # Xiaomi Mi Router AX3000T (stock layout, MediaTek mt_wifi)
-     cp -f defconfig/mt7981-ax3000t.config .config
+```bash
+git clone --depth 1 --branch openwrt-24.10-6.6 https://github.com/JIANCXG/237.git ax3000t
+cd ax3000t
+./scripts/feeds update -a
+./scripts/feeds install -a
+cp defconfig/mt7981-ax3000t.config .config
+make defconfig
+make download -j2
+make -j2 V=s
+```
 
-     # MT7986
-     cp -f defconfig/mt7986-ax6000.config .config
-     
-  6. Run `make` to build your firmware. This will download all sources, build the cross-compile toolchain and then cross-compile the GNU/Linux kernel & all chosen applications for your target system.
+固件输出目录：`bin/targets/mediatek/filogic/`。
 
-  ### Related Repositories
-  The main repository uses multiple sub-repositories to manage packages of different categories. All packages are installed via the OpenWrt package manager called opkg. If you're looking to develop the web interface or port packages to ImmortalWrt, please find the fitting repository below.
-  - [LuCI Web Interface](https://github.com/immortalwrt/luci): Modern and modular interface to control the device via a web browser.
-  - [ImmortalWrt Packages](https://github.com/immortalwrt/packages): Community repository of ported packages.
-  - [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically focused on (mesh) routing.
-  - [OpenWrt Video](https://github.com/openwrt/video): Packages specifically focused on display servers and clients (Xorg and Wayland).
+## 上游与许可
 
-## Support Information
-For a list of supported devices see the [OpenWrt Hardware Database](https://openwrt.org/supported_devices)
-  ### Documentation
-  - [Quick Start Guide](https://openwrt.org/docs/guide-quick-start/start)
-  - [User Guide](https://openwrt.org/docs/guide-user/start)
-  - [Developer Documentation](https://openwrt.org/docs/guide-developer/start)
-  - [Technical Reference](https://openwrt.org/docs/techref/start)
-
-  ### Support Community
-  - Support Chat: group [@ctcgfw_openwrt_discuss](https://t.me/ctcgfw_openwrt_discuss) on [Telegram](https://telegram.org/).
-  - Support Chat: group [#immortalwrt](https://matrix.to/#/#immortalwrt:matrix.org) on [Matrix](https://matrix.org/).
-
-## License
-ImmortalWrt is licensed under [GPL-2.0-only](https://spdx.org/licenses/GPL-2.0-only.html).
-
-## Acknowledgements
-<table>
-  <tr>
-    <td><a href="https://dlercloud.com/"><img src="https://user-images.githubusercontent.com/22235437/111103249-f9ec6e00-8588-11eb-9bfc-67cc55574555.png" width="183" height="52" border="0" alt="Dler Cloud"></a></td>
-    <td><a href="https://www.jetbrains.com/"><img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_square.png" width="120" height="120" border="0" alt="JetBrains Black Box Logo logo"></a></td>
-    <td><a href="https://sourceforge.net/"><img src="https://sourceforge.net/sflogo.php?type=17&group_id=3663829" alt="SourceForge" width=200></a></td>
-  </tr>
-</table>
+- [ImmortalWrt](https://github.com/immortalwrt/immortalwrt)
+- [padavanonly/immortalwrt-mt798x-6.6](https://github.com/padavanonly/immortalwrt-mt798x-6.6)
+- 保留上游许可证与版权声明，详见 [COPYING](COPYING) 和 [LICENSES](LICENSES)。
