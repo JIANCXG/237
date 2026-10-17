@@ -2426,7 +2426,8 @@ define Device/xiaomi_mi-router-ax3000t
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   DEVICE_PACKAGES := kmod-mt_wifi mtwifi-cfg luci-app-mtwifi-cfg \
-	-kmod-mt7915e -kmod-mt7981-firmware -mt7981-wo-firmware -wpad-openssl
+	-kmod-mt7915e -kmod-mt7981-firmware -mt7981-wo-firmware -wpad-openssl \
+	-kmod-wireguard
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   ARTIFACTS := initramfs-factory.ubi
   ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-kernel.bin | ubinize-kernel

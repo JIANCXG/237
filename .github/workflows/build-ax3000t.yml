@@ -51,6 +51,11 @@ jobs:
           fi
           cp .config ax3000t.build.config
 
+          if grep -Eq '^CONFIG_PACKAGE_(luci-app-wol|etherwake|wol|luci-proto-wireguard|wireguard-tools|kmod-wireguard)=[ym]$' .config; then
+            echo "Wake-on-LAN and WireGuard must be disabled"
+            exit 1
+          fi
+
       - name: Download sources
         run: make download -j2
 
@@ -75,6 +80,10 @@ jobs:
             exit 1
           fi
           factory_images=(bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t-initramfs-factory.ubi)
+          if grep -Eq '^(luci-app-wol|etherwake|wol|luci-proto-wireguard|wireguard-tools|kmod-wireguard) ' "${manifests[0]}"; then
+            echo "Unexpected Wake-on-LAN or WireGuard package in firmware"
+            exit 1
+          fi
           test "${#factory_images[@]}" -eq 1
           test -s "${factory_images[0]}"
 
