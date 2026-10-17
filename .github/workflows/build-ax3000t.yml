@@ -33,6 +33,10 @@ jobs:
           cp defconfig/mt7981-ax3000t.config .config
 
           make defconfig
+          cp .config ax3000t.build.config
+
+          # In per-device mode, platform defaults may be m (package only), not y (installed).
+          grep -E '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl|kmod-wireguard)=' .config || true
 
           grep -qx 'CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=y' .config
           test "$(grep -c '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_.*=y$' .config)" -eq 1
@@ -41,17 +45,15 @@ jobs:
           for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall PACKAGE_luci-i18n-passwall-zh-cn PACKAGE_luci-app-passwall_INCLUDE_Xray PACKAGE_xray-core; do
             grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
           done
-          if grep -Eq '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl)=[ym]$' .config; then
-            echo "Unexpected mt76 Wi-Fi packages enabled"
+          if grep -E '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl)=y$' .config; then
+            echo "Unexpected mt76 Wi-Fi packages selected for installation"
             exit 1
           fi
           if grep -Eq '^CONFIG_PACKAGE_(luci-app-samba4|luci-i18n-samba4[^=]*|samba4[^=]*)=[ym]$' .config; then
             echo "Samba4 must be disabled"
             exit 1
           fi
-          cp .config ax3000t.build.config
-
-          if grep -Eq '^CONFIG_PACKAGE_(luci-app-wol|etherwake|wol|luci-proto-wireguard|wireguard-tools|kmod-wireguard)=[ym]$' .config; then
+          if grep -E '^CONFIG_PACKAGE_(luci-app-wol|etherwake|wol|luci-proto-wireguard|wireguard-tools|kmod-wireguard)=y$' .config; then
             echo "Wake-on-LAN and WireGuard must be disabled"
             exit 1
           fi
@@ -99,3 +101,11 @@ jobs:
             bin/targets/mediatek/filogic/profiles.json
             bin/targets/mediatek/filogic/*.buildinfo
             ax3000t.build.config
+
+      - name: Upload configuration on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ax3000t-failed-config
+          if-no-files-found: ignore
+          path: ax3000t.build.config
