@@ -2,14 +2,23 @@ name: Check PassWall updates every 3 days
 
 on:
   schedule:
-    # Daily wake-up with a persisted 72-hour gate (also works across month boundaries).
-    - cron: '17 20 * * *'
+    # Wake hourly; query upstream only after 72 hours, retry unpublished builds sooner.
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       build:
         description: Build firmware even when upstream is unchanged
         type: boolean
         default: false
+  push:
+    branches: [openwrt-24.10-6.6]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/update-passwall.py'
+      - 'scripts/collect-ax3000t.py'
+      - 'scripts/prepare-passwall.sh'
+      - 'defconfig/mt7981-ax3000t.config'
+      - 'feeds.conf.default'
 
 permissions:
   contents: write
@@ -20,7 +29,9 @@ concurrency:
 
 jobs:
   check:
+    if: github.repository == 'JIANCXG/237'
     runs-on: ubuntu-22.04
+    timeout-minutes: 10
     outputs:
       changed: ${{ steps.update.outputs.changed }}
       source_ref: ${{ steps.commit.outputs.source_ref }}
@@ -33,8 +44,9 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
+          python3 -m unittest discover -s scripts/tests -v
           args=()
-          if [ "$EVENT_NAME" = workflow_dispatch ]; then args+=(--force); fi
+          if [ "$EVENT_NAME" != schedule ]; then args+=(--force); fi
           python3 scripts/update-passwall.py "${args[@]}"
       - name: Save checked time and updated pins
         id: commit
@@ -47,6 +59,16 @@ jobs:
             git push origin HEAD:openwrt-24.10-6.6
           fi
           echo "source_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Summarize check
+        env:
+          BUILD: ${{ steps.update.outputs.changed }}
+        run: |
+          {
+            echo '### AX3000T / PassWall'
+            echo "- Build/release pending: $BUILD"
+            echo '- Profile: OpenWrt 24.10 / Linux 6.6 / stock partition layout'
+            echo '- Successful builds are automatically published to Releases.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build:
     needs: check

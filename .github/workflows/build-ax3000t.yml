@@ -10,11 +10,17 @@ on:
         required: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    outputs:
+      source_commit: ${{ steps.source.outputs.commit }}
+      fingerprint: ${{ steps.source.outputs.fingerprint }}
 
     steps:
       - name: Checkout source
@@ -22,6 +28,13 @@ jobs:
         with:
           ref: ${{ inputs.source_ref || github.sha }}
           fetch-depth: 1
+          persist-credentials: false
+
+      - name: Identify exact build source
+        id: source
+        run: |
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "fingerprint=$(python3 scripts/update-passwall.py --fingerprint)" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: |
@@ -125,19 +138,16 @@ jobs:
           done
           cp .github/passwall-upstream.json bin/targets/mediatek/filogic/passwall-upstream.json
 
+      - name: Collect release assets and SHA256 checksums
+        run: python3 scripts/collect-ax3000t.py
+
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: xiaomi-ax3000t-firmware
           if-no-files-found: error
-          path: |
-            bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t*
-            bin/targets/mediatek/filogic/*.manifest
-            bin/targets/mediatek/filogic/sha256sums
-            bin/targets/mediatek/filogic/profiles.json
-            bin/targets/mediatek/filogic/*.buildinfo
-            bin/targets/mediatek/filogic/passwall-upstream.json
-            ax3000t.build.config
+          path: firmware/
+          retention-days: 30
 
       - name: Upload configuration and diagnostics on failure
         if: failure()
@@ -149,3 +159,67 @@ jobs:
             ax3000t.build.config
             bin/targets/mediatek/filogic/*.manifest
             bin/targets/mediatek/filogic/profiles.json
+
+  publish:
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # Serialize publication and state commits, including standalone manual builds.
+    concurrency:
+      group: ax3000t-release
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE: ${{ needs.build.outputs.source_commit }}
+      FINGERPRINT: ${{ needs.build.outputs.fingerprint }}
+      RELEASE_TAG: ax3000t-passwall-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: openwrt-24.10-6.6
+      - uses: actions/download-artifact@v4
+        with:
+          name: xiaomi-ax3000t-firmware
+          path: firmware
+      - name: Publish firmware release
+        run: |
+          (cd firmware && sha256sum -c sha256sums)
+          cat > release-notes.md <<EOF
+          小米 AX3000T 原厂分区固件，OpenWrt 24.10 / Linux 6.6。
+
+          包含联发科厂商无线驱动、中文版 PassWall、Xray、Sing-box 和 SmartDNS。
+          initramfs-factory.ubi 用于首次迁移流程，sysupgrade.bin 用于对应布局的后续升级。
+          仅适用于原厂分区布局，请勿混用其他 U-Boot 分区镜像。
+
+          - Source commit: $SOURCE
+          - Build fingerprint: $FINGERPRINT
+          - Build: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          附件包含固件、软件包清单、完整编译配置、上游固定版本和 SHA256 校验文件。
+          EOF
+          python3 - <<'PY' >> release-notes.md
+          import json
+          from pathlib import Path
+          lock = json.loads(Path('firmware/passwall-upstream.json').read_text())
+          for name, commit in lock['commits'].items():
+              print(f'- {name} commit: {commit}')
+          PY
+          gh release create "$RELEASE_TAG" firmware/* \
+            --repo "$GITHUB_REPOSITORY" --target "$SOURCE" \
+            --title "AX3000T PassWall $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" \
+            --notes-file release-notes.md
+          echo "Release: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
+      - name: Record successful release
+        run: |
+          git pull --ff-only origin openwrt-24.10-6.6
+          python3 scripts/update-passwall.py --record-success \
+            --source-commit "$SOURCE" --build-fingerprint "$FINGERPRINT" \
+            --release-tag "$RELEASE_TAG" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/ax3000t-last-success.json
+          git commit -m 'build: record successful AX3000T PassWall release'
+          git push origin HEAD:openwrt-24.10-6.6
