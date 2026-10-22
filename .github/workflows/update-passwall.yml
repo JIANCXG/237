@@ -17,6 +17,7 @@ on:
       - 'scripts/update-passwall.py'
       - 'scripts/collect-ax3000t.py'
       - 'scripts/prepare-passwall.sh'
+      - 'scripts/tests/**'
       - 'defconfig/mt7981-ax3000t.config'
       - 'feeds.conf.default'
 
