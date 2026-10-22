@@ -118,6 +118,15 @@ jobs:
           fi
           test "${#factory_images[@]}" -eq 1
           test -s "${factory_images[0]}"
+          # Ensure the firmware contains the upgraded Dnsmasq, not a feed duplicate.
+          dnsmasq_recipe=package/network/services/dnsmasq/Makefile
+          dnsmasq_version=$(sed -n 's/^PKG_UPSTREAM_VERSION:=//p' "$dnsmasq_recipe")
+          dnsmasq_release=$(sed -n 's/^PKG_RELEASE:=//p' "$dnsmasq_recipe")
+          dnsmasq_actual=$(awk '$1 == "dnsmasq-full" {print $3}' "${manifests[0]}")
+          if [[ "$dnsmasq_actual" != "$dnsmasq_version-r$dnsmasq_release" ]]; then
+            echo "Version mismatch for dnsmasq-full: expected $dnsmasq_version-r$dnsmasq_release, installed ${dnsmasq_actual:-<missing>}"
+            exit 1
+          fi
           # Verify installed versions against the pinned upstream recipes.
           for spec in 'luci-app-passwall:passwall_luci/luci-app-passwall' 'xray-core:passwall_packages/xray-core' 'sing-box:passwall_packages/sing-box' 'smartdns:passwall_packages/smartdns'; do
             package=${spec%%:*}
