@@ -22,3 +22,4 @@ git -C "$go_source" archive HEAD | tar -x -C feeds/packages/lang/golang
 ./scripts/feeds install -a -f -p passwall_luci
 test "$(readlink -f package/feeds/passwall_luci/luci-app-passwall)" = "$PWD/feeds/passwall_luci/luci-app-passwall"
 test "$(readlink -f package/feeds/passwall_packages/xray-core)" = "$PWD/feeds/passwall_packages/xray-core"
+test "$(readlink -f package/feeds/passwall_packages/sing-box)" = "$PWD/feeds/passwall_packages/sing-box"

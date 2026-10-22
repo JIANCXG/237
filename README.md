@@ -9,7 +9,7 @@
 - 设备：`xiaomi_mi-router-ax3000t`，原厂分区布局。
 - 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
 - LuCI HTTPS：统一使用 OpenSSL 后端。
-- 包含官方最新版中文版 PassWall、Xray 核心和 SmartDNS；上游提交固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。
+- 包含官方最新版中文版 PassWall、Xray 与 Sing-box 双核心及 SmartDNS；上游提交固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。Sing-box 启用 QUIC 和 uTLS 支持。
 - 不包含 Samba4 文件共享、网络唤醒和 WireGuard。
 - 开启 initramfs，同时生成首次迁移镜像和后续升级镜像。
 
@@ -22,7 +22,7 @@
 3. 点击 **Run workflow**，使用 `openwrt-24.10-6.6` 分支。
 4. 编译成功后，下载 **xiaomi-ax3000t-firmware** 产物。
 
-工作流从唯一预设生成 `.config`，并检查设备选择、厂商无线驱动、PassWall 和 Xray 是否包含、Samba4 等已移除功能是否禁用，以及首次迁移镜像是否生成。
+工作流从唯一预设生成 `.config`，并检查设备选择、厂商无线驱动、PassWall、Xray 与 Sing-box 是否包含、Samba4 等已移除功能是否禁用，以及首次迁移镜像是否生成。
 
 ## PassWall 自动更新
 

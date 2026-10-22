@@ -42,6 +42,9 @@ jobs:
           make defconfig
           cp .config ax3000t.build.config
           grep -qx 'CONFIG_PACKAGE_smartdns=y' .config
+          for symbol in PACKAGE_luci-app-passwall_INCLUDE_SingBox PACKAGE_sing-box SING_BOX_BUILD_QUIC SING_BOX_BUILD_UTLS; do
+            grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
+          done
 
           # In per-device mode, platform defaults may be m (package only), not y (installed).
           grep -E '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl|kmod-wireguard)=' .config || true
@@ -82,7 +85,7 @@ jobs:
           # TARGET_MULTI_PROFILE emits a target-level manifest without a device suffix.
           manifests=(bin/targets/mediatek/filogic/*.manifest)
           test "${#manifests[@]}" -eq 1
-          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core luci-ssl-openssl; do
+          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core sing-box luci-ssl-openssl; do
             grep -q "^${package} " "${manifests[0]}" || { echo "Missing firmware package: $package"; exit 1; }
           done
           grep -Eq '^libustream-openssl[^ ]* ' "${manifests[0]}"
@@ -103,7 +106,7 @@ jobs:
           test "${#factory_images[@]}" -eq 1
           test -s "${factory_images[0]}"
           # Verify installed versions against the pinned upstream recipes.
-          for spec in 'luci-app-passwall:passwall_luci/luci-app-passwall' 'xray-core:passwall_packages/xray-core' 'smartdns:passwall_packages/smartdns'; do
+          for spec in 'luci-app-passwall:passwall_luci/luci-app-passwall' 'xray-core:passwall_packages/xray-core' 'sing-box:passwall_packages/sing-box' 'smartdns:passwall_packages/smartdns'; do
             package=${spec%%:*}
             recipe=${spec#*:}
             version=$(sed -n 's/^PKG_VERSION:=//p' "feeds/$recipe/Makefile")
