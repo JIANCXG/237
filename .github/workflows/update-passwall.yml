@@ -1,0 +1,56 @@
+name: Check PassWall updates every 3 days
+
+on:
+  schedule:
+    # Daily wake-up with a persisted 72-hour gate (also works across month boundaries).
+    - cron: '17 20 * * *'
+  workflow_dispatch:
+    inputs:
+      build:
+        description: Build firmware even when upstream is unchanged
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: passwall-updater
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-22.04
+    outputs:
+      changed: ${{ steps.update.outputs.changed }}
+      source_ref: ${{ steps.commit.outputs.source_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: openwrt-24.10-6.6
+      - name: Check upstream
+        id: update
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          args=()
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then args+=(--force); fi
+          python3 scripts/update-passwall.py "${args[@]}"
+      - name: Save checked time and updated pins
+        id: commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add feeds.conf.default .github/passwall-upstream.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: check and refresh PassWall upstream pins'
+            git push origin HEAD:openwrt-24.10-6.6
+          fi
+          echo "source_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check
+    if: needs.check.outputs.changed == 'true' || inputs.build == true
+    uses: ./.github/workflows/build-ax3000t.yml
+    with:
+      source_ref: ${{ needs.check.outputs.source_ref }}

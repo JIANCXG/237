@@ -2,6 +2,15 @@ name: Build AX3000T Firmware
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      source_ref:
+        description: Exact source commit selected by the upstream checker
+        type: string
+        required: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -11,7 +20,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
-          ref: openwrt-24.10-6.6
+          ref: ${{ inputs.source_ref || github.sha }}
           fetch-depth: 1
 
       - name: Install dependencies
@@ -24,9 +33,7 @@ jobs:
             rsync unzip zlib1g-dev file wget
 
       - name: Update feeds
-        run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+        run: bash scripts/prepare-passwall.sh
 
       - name: Prepare config
         run: |
@@ -34,6 +41,7 @@ jobs:
 
           make defconfig
           cp .config ax3000t.build.config
+          grep -qx 'CONFIG_PACKAGE_smartdns=y' .config
 
           # In per-device mode, platform defaults may be m (package only), not y (installed).
           grep -E '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl|kmod-wireguard)=' .config || true
@@ -94,6 +102,15 @@ jobs:
           fi
           test "${#factory_images[@]}" -eq 1
           test -s "${factory_images[0]}"
+          # Verify installed versions against the pinned upstream recipes.
+          for spec in 'luci-app-passwall:passwall_luci/luci-app-passwall' 'xray-core:passwall_packages/xray-core' 'smartdns:passwall_packages/smartdns'; do
+            package=${spec%%:*}
+            recipe=${spec#*:}
+            version=$(sed -n 's/^PKG_VERSION:=//p' "feeds/$recipe/Makefile")
+            release=$(sed -n 's/^PKG_RELEASE:=//p' "feeds/$recipe/Makefile")
+            grep -Fqx "$package - $version-$release" "${manifests[0]}"
+          done
+          cp .github/passwall-upstream.json bin/targets/mediatek/filogic/passwall-upstream.json
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
@@ -106,6 +123,7 @@ jobs:
             bin/targets/mediatek/filogic/sha256sums
             bin/targets/mediatek/filogic/profiles.json
             bin/targets/mediatek/filogic/*.buildinfo
+            bin/targets/mediatek/filogic/passwall-upstream.json
             ax3000t.build.config
 
       - name: Upload configuration on failure
