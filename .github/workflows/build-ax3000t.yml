@@ -111,7 +111,17 @@ jobs:
             recipe=${spec#*:}
             version=$(sed -n 's/^PKG_VERSION:=//p' "feeds/$recipe/Makefile")
             release=$(sed -n 's/^PKG_RELEASE:=//p' "feeds/$recipe/Makefile")
-            grep -Fqx "$package - $version-$release" "${manifests[0]}"
+            if [[ -z "$version" || -z "$release" ]]; then
+              echo "Cannot read package version/release: feeds/$recipe/Makefile"
+              exit 1
+            fi
+            # OpenWrt 24.10 appends -r<release>, unlike the older 21.02 format.
+            expected="$version-r$release"
+            actual=$(awk -v name="$package" '$1 == name {print $3}' "${manifests[0]}")
+            if [[ "$actual" != "$expected" ]]; then
+              echo "Version mismatch for $package: expected $expected, installed ${actual:-<missing>}"
+              exit 1
+            fi
           done
           cp .github/passwall-upstream.json bin/targets/mediatek/filogic/passwall-upstream.json
 
@@ -129,10 +139,13 @@ jobs:
             bin/targets/mediatek/filogic/passwall-upstream.json
             ax3000t.build.config
 
-      - name: Upload configuration on failure
+      - name: Upload configuration and diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ax3000t-failed-config
           if-no-files-found: ignore
-          path: ax3000t.build.config
+          path: |
+            ax3000t.build.config
+            bin/targets/mediatek/filogic/*.manifest
+            bin/targets/mediatek/filogic/profiles.json
