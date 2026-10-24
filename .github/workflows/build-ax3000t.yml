@@ -1,4 +1,4 @@
-name: Build AX3000T Firmware
+name: Build AX3000T MTK U-Boot 112M Firmware
 
 on:
   workflow_dispatch:
@@ -62,7 +62,7 @@ jobs:
           # In per-device mode, platform defaults may be m (package only), not y (installed).
           grep -E '^CONFIG_PACKAGE_(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl|kmod-wireguard)=' .config || true
 
-          grep -qx 'CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=y' .config
+          grep -qx 'CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t-mtkuboot=y' .config
           test "$(grep -c '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_.*=y$' .config)" -eq 1
 
           # Fail before compiling if configuration resolution changes the Wi-Fi stack.
@@ -111,13 +111,16 @@ jobs:
             echo "Unexpected Samba4 package in firmware"
             exit 1
           fi
-          factory_images=(bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t-initramfs-factory.ubi)
+          factory_images=(bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t-mtkuboot-squashfs-factory.bin)
+          upgrade_images=(bin/targets/mediatek/filogic/*xiaomi_mi-router-ax3000t-mtkuboot-squashfs-sysupgrade.bin)
           if grep -Eq '^(luci-app-wol|etherwake|wol|luci-proto-wireguard|wireguard-tools|kmod-wireguard) ' "${manifests[0]}"; then
             echo "Unexpected Wake-on-LAN or WireGuard package in firmware"
             exit 1
           fi
           test "${#factory_images[@]}" -eq 1
           test -s "${factory_images[0]}"
+          test "${#upgrade_images[@]}" -eq 1
+          test -s "${upgrade_images[0]}"
           # Ensure the firmware contains the upgraded Dnsmasq, not a feed duplicate.
           dnsmasq_recipe=package/network/services/dnsmasq/Makefile
           dnsmasq_version=$(sed -n 's/^PKG_UPSTREAM_VERSION:=//p' "$dnsmasq_recipe")
@@ -153,7 +156,7 @@ jobs:
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: xiaomi-ax3000t-firmware
+          name: xiaomi-ax3000t-mtkuboot-112m-firmware
           if-no-files-found: error
           path: firmware/
           retention-days: 30
@@ -190,17 +193,18 @@ jobs:
           ref: openwrt-24.10-6.6
       - uses: actions/download-artifact@v4
         with:
-          name: xiaomi-ax3000t-firmware
+          name: xiaomi-ax3000t-mtkuboot-112m-firmware
           path: firmware
       - name: Publish firmware release
         run: |
           (cd firmware && sha256sum -c sha256sums)
           cat > release-notes.md <<EOF
-          小米 AX3000T 原厂分区固件，OpenWrt 24.10 / Linux 6.6。
+          小米 AX3000T MTK U-Boot（mtkuboot）112M 大分区固件，OpenWrt 24.10 / Linux 6.6。
 
           包含联发科厂商无线驱动、中文版 PassWall、Xray、Sing-box 和 SmartDNS。
-          initramfs-factory.ubi 用于首次迁移流程，sysupgrade.bin 用于对应布局的后续升级。
-          仅适用于原厂分区布局，请勿混用其他 U-Boot 分区镜像。
+          squashfs-factory.bin 用于匹配该布局的 MTK U-Boot 刷入流程，sysupgrade.bin 用于该布局的后续升级。
+          仅适用于 MTK U-Boot 112M 大分区布局，不适用于原厂布局或 OpenWrt U-Boot（ubootmod）布局。
+          UBI 分区起始地址 0x600000，大小 0x7000000（112 MiB）；112M 并非刷入后的剩余可用空间。
 
           - Source commit: $SOURCE
           - Build fingerprint: $FINGERPRINT
@@ -217,7 +221,7 @@ jobs:
           PY
           gh release create "$RELEASE_TAG" firmware/* \
             --repo "$GITHUB_REPOSITORY" --target "$SOURCE" \
-            --title "AX3000T PassWall $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" \
+            --title "AX3000T MTK U-Boot 112M 大分区 PassWall $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" \
             --notes-file release-notes.md
           echo "Release: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
       - name: Record successful release

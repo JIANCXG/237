@@ -68,7 +68,7 @@ jobs:
           {
             echo '### AX3000T / PassWall'
             echo "- Build/release pending: $BUILD"
-            echo '- Profile: OpenWrt 24.10 / Linux 6.6 / stock partition layout'
+            echo '- Profile: OpenWrt 24.10 / Linux 6.6 / MTK U-Boot (mtkuboot) / 112M 大分区 (112 MiB)'
             echo '- Successful builds are automatically published to Releases.'
           } >> "$GITHUB_STEP_SUMMARY"
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect verified AX3000T firmware into a flat directory for artifacts/releases."""
+"""Collect AX3000T MTK U-Boot 112M firmware for artifacts/releases."""
 import hashlib
 from pathlib import Path
 import shutil
@@ -8,11 +8,11 @@ import shutil
 def collect(root=Path.cwd()):
     target = root / "bin/targets/mediatek/filogic"
     output = root / "firmware"
-    images = sorted(target.glob("*xiaomi_mi-router-ax3000t*"))
-    for suffix in ("-initramfs-factory.ubi", "-squashfs-sysupgrade.bin"):
+    images = sorted(target.glob("*xiaomi_mi-router-ax3000t-mtkuboot-*"))
+    for suffix in ("-squashfs-factory.bin", "-squashfs-sysupgrade.bin"):
         matches = [path for path in images if path.name.endswith(suffix)]
         if len(matches) != 1 or matches[0].stat().st_size == 0:
-            raise ValueError(f"Expected one nonempty AX3000T {suffix} image")
+            raise ValueError(f"Expected one nonempty AX3000T mtkuboot 112M {suffix} image")
     files = images + sorted(target.glob("*.manifest")) + sorted(target.glob("*.buildinfo"))
     files += [target / "profiles.json", target / "passwall-upstream.json", root / "ax3000t.build.config"]
     # Validate all inputs before producing release assets.

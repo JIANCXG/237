@@ -90,8 +90,8 @@ class ReleaseTests(unittest.TestCase):
     def make_assets(self):
         target = self.root / "bin/targets/mediatek/filogic"
         target.mkdir(parents=True)
-        for name in ("firmware-xiaomi_mi-router-ax3000t-initramfs-factory.ubi",
-                     "firmware-xiaomi_mi-router-ax3000t-squashfs-sysupgrade.bin",
+        for name in ("firmware-xiaomi_mi-router-ax3000t-mtkuboot-squashfs-factory.bin",
+                     "firmware-xiaomi_mi-router-ax3000t-mtkuboot-squashfs-sysupgrade.bin",
                      "firmware.manifest", "profiles.json", "passwall-upstream.json", "config.buildinfo"):
             (target / name).write_text(name)
         (self.root / "ax3000t.build.config").write_text("CONFIG_TARGET=y\n")
@@ -112,6 +112,16 @@ class ReleaseTests(unittest.TestCase):
     def test_missing_upgrade_image_blocks_publication(self):
         target = self.make_assets()
         next(target.glob("*sysupgrade.bin")).unlink()
+        with self.assertRaises(ValueError):
+            collector.collect(self.root)
+        self.assertFalse((self.root / "firmware").exists())
+
+    def test_stock_and_ubootmod_images_cannot_replace_mtkuboot(self):
+        target = self.make_assets()
+        next(target.glob("*sysupgrade.bin")).unlink()
+        for name in ("firmware-xiaomi_mi-router-ax3000t-squashfs-sysupgrade.bin",
+                     "firmware-xiaomi_mi-router-ax3000t-ubootmod-sysupgrade.itb"):
+            (target / name).write_text(name)
         with self.assertRaises(ValueError):
             collector.collect(self.root)
         self.assertFalse((self.root / "firmware").exists())

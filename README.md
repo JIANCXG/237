@@ -1,30 +1,31 @@
-# 小米 AX3000T 固件编译
+# 小米 AX3000T MTK U-Boot 112M 大分区固件编译
 
-本仓库基于 [padavanonly/immortalwrt-mt798x-6.6](https://github.com/padavanonly/immortalwrt-mt798x-6.6)，仅维护小米 AX3000T 原厂分区布局的编译配置。
+本仓库基于 [padavanonly/immortalwrt-mt798x-6.6](https://github.com/padavanonly/immortalwrt-mt798x-6.6)，仅维护小米 AX3000T MTK U-Boot（`mtkuboot`）112M 大分区布局的编译配置。
 
 ## 编译配置
 
 - 唯一预设：[`defconfig/mt7981-ax3000t.config`](defconfig/mt7981-ax3000t.config)。
 - 平台：MediaTek Filogic / MT7981，Linux 6.6 系列内核。
-- 设备：`xiaomi_mi-router-ax3000t`，原厂分区布局。
+- 设备：`xiaomi_mi-router-ax3000t-mtkuboot`，MTK U-Boot 112M 大分区布局。
+- 分区：UBI 从 `0x600000` 开始，大小为 `0x7000000`（112 MiB）；内核与根文件系统位于同一个 UBI 分区，112M 并非刷入后的剩余可用空间。
 - 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
 - LuCI HTTPS：统一使用 OpenSSL 后端。
 - 包含官方最新版中文版 PassWall、Xray 与 Sing-box 双核心及 SmartDNS；上游提交固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。Sing-box 启用 QUIC 和 uTLS 支持。
 - 不包含 Samba4 文件共享、网络唤醒和 WireGuard。
-- 开启 initramfs，同时生成首次迁移镜像和后续升级镜像。
+- 保留 initramfs，同时生成 MTK U-Boot 布局的 `factory.bin` 刷入镜像和 `sysupgrade.bin` 升级镜像。
 
 其他机型的预设配置已删除。保留上游的构建系统、软件包和底层平台源码，实际编译仅选择 AX3000T。
 
 ## GitHub Actions 编译
 
 1. 打开本仓库的 **Actions** 页面。
-2. 选择 **Build AX3000T Firmware**。
+2. 选择 **Build AX3000T MTK U-Boot 112M Firmware**。
 3. 点击 **Run workflow**，使用 `openwrt-24.10-6.6` 分支。
-4. 编译并校验成功后，`publish` 任务自动创建 **Release** 并上传固件；到仓库的 **Releases** 页面下载附件。Actions 中同时保留 **xiaomi-ax3000t-firmware** 产物 30 天。
+4. 编译并校验成功后，`publish` 任务自动创建 **Release** 并上传固件，标题标注 **MTK U-Boot 112M 大分区**；到仓库的 **Releases** 页面下载附件。Actions 中同时保留 **xiaomi-ax3000t-mtkuboot-112m-firmware** 产物 30 天。
 
 流程与 `JIANCXG/hanwckf` 一致：检查上游 → 编译校验 → 发布 Release → 记录成功版本。每次发布使用 `ax3000t-passwall-运行ID-尝试次数` 唯一标签，发布说明记录精确源码提交及 PassWall、依赖包和 Go 工具链版本。固件、软件包清单、构建配置和上游版本文件平铺上传，并附带覆盖全部附件的 `sha256sums`。
 
-工作流从唯一预设生成 `.config`，并检查设备选择、厂商无线驱动、PassWall、Xray 与 Sing-box 是否包含、Samba4 等已移除功能是否禁用，以及首次迁移镜像是否生成。
+工作流从唯一预设生成 `.config`，并检查 mtkuboot 设备选择、厂商无线驱动、PassWall、Xray 与 Sing-box 是否包含、Samba4 等已移除功能是否禁用，以及该布局的 factory 和 sysupgrade 镜像是否生成。
 
 ## PassWall 自动更新
 
@@ -36,13 +37,15 @@ Go 工具链使用 `sbwml/packages_lang_golang` 的 `27.x` 分支（固定提交
 
 产物包括：
 
-- `*xiaomi_mi-router-ax3000t-initramfs-factory.ubi`：首次迁移流程所需镜像。
-- `*xiaomi_mi-router-ax3000t-squashfs-sysupgrade.bin`：对应布局下的系统升级镜像。
+- `*xiaomi_mi-router-ax3000t-mtkuboot-squashfs-factory.bin`：匹配 MTK U-Boot 112M 大分区布局的刷入镜像。
+- `*xiaomi_mi-router-ax3000t-mtkuboot-squashfs-sysupgrade.bin`：该布局下的系统升级镜像。
 - AX3000T 的其他生成文件、校验信息及构建信息。
 - `ax3000t.build.config`：编译实际使用的完整配置。
 - `passwall-upstream.json`：PassWall、依赖包和 Go 工具链的固定提交及最近检查时间。
 
-这些镜像针对原厂分区布局。使用 MTK U-Boot 或 OpenWrt U-Boot 改版分区的设备不属于当前配置目标；首次迁移镜像也不是小米官方网页升级包。
+这些镜像仅适用于 MTK U-Boot（`mtkuboot`）112M 大分区布局，不适用于原厂布局或 OpenWrt U-Boot（`ubootmod`）布局。原厂设备需要先按对应教程完成引导与布局迁移，不能直接把此固件当作原厂布局升级包；`factory.bin` 也不是小米官方网页升级包。
+
+历史 Release 可能仍是原厂布局，请以每次发布说明及固件文件名中的 `mtkuboot` 标识为准。
 
 ## 本地编译
 
