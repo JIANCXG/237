@@ -10,7 +10,7 @@
 - 分区：UBI 从 `0x600000` 开始，大小为 `0x7000000`（112 MiB）；内核与根文件系统位于同一个 UBI 分区，112M 并非刷入后的剩余可用空间。
 - 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
 - LuCI HTTPS：统一使用 OpenSSL 后端。
-- 包含官方最新版中文版 PassWall、Xray 与 Sing-box 双核心及 SmartDNS；上游提交固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。Sing-box 启用 QUIC 和 uTLS 支持。
+- 包含官方最新版中文版 PassWall、Xray 与 Sing-box 双核心及 SmartDNS；PassWall、基础软件源及 Go 工具链的上游提交统一固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。Sing-box 启用 QUIC 和 uTLS 支持。
 - 不包含 Samba4 文件共享、网络唤醒和 WireGuard。
 - 保留 initramfs，同时生成 MTK U-Boot 布局的 `factory.bin` 刷入镜像和 `sysupgrade.bin` 升级镜像。
 
@@ -29,9 +29,11 @@
 
 ## PassWall 自动更新
 
-`Check PassWall updates every 3 days` 工作流每隔至少 72 小时检查官方 PassWall、配套依赖包及 Go 1.27 工具链的上游提交。与 `hanwckf` 相同，GitHub 每小时第 17 分钟唤醒工作流，未满 72 小时跳过上游查询；此方式保证跨月时不会缩短检查间隔，实际执行可能受 GitHub 调度延迟影响。
+`Check PassWall updates every 3 days` 工作流每隔至少 72 小时检查官方 PassWall、配套依赖包、Go 1.27 工具链，以及 packages、luci、routing、telephony 四个基础软件源的上游提交。与 `hanwckf` 相同，GitHub 每小时第 17 分钟唤醒工作流，未满 72 小时跳过上游查询；此方式保证跨月时不会缩短检查间隔，实际执行可能受 GitHub 调度延迟影响。
 
-发现新提交后自动更新固定版本、提交到当前默认分支并编译发布固件；与上次成功发布的源码、配置及固定版本相同时不编译。仅在 Release 发布成功后更新 `.github/ax3000t-last-success.json`，检查时间不作为编译成功标记。检查失败不推进时间，下次唤醒时重试；编译或发布失败则保持待构建状态，下次每小时唤醒时使用固定版本重试。也可在 Actions 重新运行失败任务，或手动运行检查工作流并勾选 `build` 强制编译。手动检查会绕过 72 小时间隔。修改工作流、构建脚本、AX3000T 配置或 feeds 时也会触发检查与构建。此流程不会自动刷写路由器。
+全部上游查询成功后，如发现任一上游有新提交，则统一更新固定版本、提交到当前默认分支并编译发布固件；与上次成功发布的源码、配置及固定版本相同时不编译。仅在 Release 发布成功后更新 `.github/ax3000t-last-success.json`，检查时间不作为编译成功标记。检查失败不推进时间，下次唤醒时重试；编译或发布失败则保持待构建状态，下次每小时唤醒时使用固定版本重试。也可在 Actions 重新运行失败任务，或手动运行检查工作流并勾选 `build` 强制编译。手动检查会绕过 72 小时间隔。修改工作流、构建脚本、AX3000T 配置或 feeds 时也会触发检查与构建。此流程不会自动刷写路由器。
+
+所有软件源均使用精确提交构建，基础软件源的上游变更也参与构建指纹判断。编译阶段只使用固定版本，不再随分支头漂移；这保证源码依赖版本可追溯，但不承诺固件逐字节可复现。
 
 Go 工具链使用 `sbwml/packages_lang_golang` 的 `27.x` 分支（固定提交），替代 OpenWrt 24.10 软件源中的旧 Go 1.23，以满足新版 Xray 的编译要求。
 

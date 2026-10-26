@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refresh pinned PassWall feeds at most once every 72 hours."""
+"""Refresh all pinned firmware feeds at most once every 72 hours."""
 import argparse
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -14,7 +14,12 @@ SOURCES = {
     "passwall_luci": ("https://github.com/Openwrt-Passwall/openwrt-passwall.git", "main"),
     "passwall_packages": ("https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git", "main"),
     "golang": ("https://github.com/sbwml/packages_lang_golang.git", "27.x"),
+    "packages": ("https://github.com/immortalwrt/packages.git", "openwrt-24.10"),
+    "luci": ("https://github.com/immortalwrt/luci.git", "openwrt-24.10"),
+    "routing": ("https://github.com/openwrt/routing.git", "openwrt-24.10"),
+    "telephony": ("https://github.com/openwrt/telephony.git", "openwrt-24.10"),
 }
+FEED_SOURCES = tuple(name for name in SOURCES if name != "golang")
 SUCCESS_STATE = ".github/ax3000t-last-success.json"
 
 
@@ -74,7 +79,7 @@ def refresh(root=ROOT, force=False, now=None, resolve=remote_commit):
     changed = any(lock["commits"].get(name) != sha for name, sha in commits.items())
     feeds_path = root / "feeds.conf.default"
     feeds = feeds_path.read_text(encoding="utf-8")
-    for name in ("passwall_luci", "passwall_packages"):
+    for name in FEED_SOURCES:
         line = f"src-git {name} {SOURCES[name][0]}^{commits[name]}"
         feeds, count = re.subn(rf"^src-git {name} .+$", line, feeds, flags=re.MULTILINE)
         if count != 1:

@@ -31,7 +31,7 @@ class ReleaseTests(unittest.TestCase):
         self.lock.write_text(json.dumps({"checked_at": self.now.isoformat(), "commits": self.commits}))
         (self.root / "feeds.conf.default").write_text("".join(
             f"src-git {name} {updater.SOURCES[name][0]}^{self.commits[name]}\n"
-            for name in ("passwall_luci", "passwall_packages")
+            for name in updater.FEED_SOURCES
         ))
         (self.root / "config").write_text("stock profile\n")
         self.git("init", "-q")
@@ -86,6 +86,42 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             updater.refresh(self.root, force=True, now=self.now, resolve=fail)
         self.assertEqual(before, (self.lock.read_bytes(), (self.root / "feeds.conf.default").read_bytes()))
+
+    def test_each_base_feed_update_requires_release_and_pins_exact_commit(self):
+        for interval, changed_name in enumerate(("packages", "luci", "routing", "telephony"), 1):
+            with self.subTest(feed=changed_name):
+                self.success()
+                current = json.loads(self.lock.read_text())["commits"]
+                expected = dict(current, **{changed_name: "a" * 40})
+                def resolve(url, branch):
+                    return next(expected[name] for name, source in updater.SOURCES.items()
+                                if source == (url, branch))
+                self.assertTrue(updater.refresh(self.root, now=self.now + timedelta(hours=73 * interval),
+                                                resolve=resolve))
+                self.assertTrue(updater.needs_build(self.root))
+                feeds = (self.root / "feeds.conf.default").read_text().splitlines()
+                for name in updater.FEED_SOURCES:
+                    self.assertIn(f"src-git {name} {updater.SOURCES[name][0]}^{expected[name]}", feeds)
+                self.assertEqual(json.loads(self.lock.read_text())["commits"], expected)
+
+    def test_last_feed_failure_preserves_all_pins_and_check_time(self):
+        before = self.lock.read_bytes(), (self.root / "feeds.conf.default").read_bytes()
+        def resolve(url, branch):
+            if (url, branch) == updater.SOURCES["telephony"]:
+                raise RuntimeError("last feed unavailable")
+            return "a" * 40
+        with self.assertRaises(RuntimeError):
+            updater.refresh(self.root, now=self.now + timedelta(hours=73), resolve=resolve)
+        self.assertEqual(before, (self.lock.read_bytes(), (self.root / "feeds.conf.default").read_bytes()))
+
+    def test_missing_feed_entry_does_not_partially_write_pins(self):
+        feeds = self.root / "feeds.conf.default"
+        feeds.write_text("\n".join(line for line in feeds.read_text().splitlines()
+                                   if not line.startswith("src-git telephony ")) + "\n")
+        before = self.lock.read_bytes(), feeds.read_bytes()
+        with self.assertRaises(ValueError):
+            updater.refresh(self.root, force=True, now=self.now, resolve=lambda *args: "a" * 40)
+        self.assertEqual(before, (self.lock.read_bytes(), feeds.read_bytes()))
 
     def make_assets(self):
         target = self.root / "bin/targets/mediatek/filogic"
