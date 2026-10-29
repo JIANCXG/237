@@ -1,7 +1,7 @@
 {
-  "fingerprint": "5f250838a40c0db8a015834d8682264d5ab0ccd757821e8c30646d4b87e14233",
-  "source_commit": "56a618ab43ccb6426e2e8d997077021b67cce264",
-  "release_tag": "ax3000t-passwall-40257457921-1",
-  "run_url": "https://github.com/JIANCXG/237/actions/runs/40257457921",
-  "published_at": "2026-10-26T03:56:44+00:00"
+  "fingerprint": "e6fbb74466945ba1b21ebe679a4dc5354ff05b18d1f0a1290e32f3569cd6a986",
+  "source_commit": "48d6c39001e712849852b8946be89e95abb97dc6",
+  "release_tag": "ax3000t-passwall-40833395331-1",
+  "run_url": "https://github.com/JIANCXG/237/actions/runs/40833395331",
+  "published_at": "2026-10-29T08:08:39+00:00"
 }
