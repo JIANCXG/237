@@ -11,7 +11,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = {
-    "passwall_luci": ("https://github.com/Openwrt-Passwall/openwrt-passwall2.git", "main"),
+    "passwall_luci": ("https://github.com/Openwrt-Passwall/openwrt-passwall.git", "main"),
     "passwall_packages": ("https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git", "main"),
     "golang": ("https://github.com/sbwml/packages_lang_golang.git", "27.x"),
     "packages": ("https://github.com/immortalwrt/packages.git", "openwrt-24.10"),

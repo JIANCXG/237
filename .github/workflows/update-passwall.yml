@@ -1,4 +1,4 @@
-name: Check PassWall2 updates every 3 days
+name: Check PassWall updates every 3 days
 
 on:
   schedule:
@@ -57,7 +57,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add feeds.conf.default .github/passwall-upstream.json
           if ! git diff --cached --quiet; then
-            git commit -m 'chore: check and refresh PassWall2 upstream pins'
+            git commit -m 'chore: check and refresh PassWall upstream pins'
             git push origin HEAD:openwrt-24.10-6.6
           fi
           echo "source_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -66,7 +66,7 @@ jobs:
           BUILD: ${{ steps.update.outputs.changed }}
         run: |
           {
-            echo '### AX3000T / PassWall2'
+            echo '### AX3000T / PassWall'
             echo "- Build/release pending: $BUILD"
             echo '- Profile: OpenWrt 24.10 / Linux 6.6 / MTK U-Boot (mtkuboot) / 112M 大分区 (112 MiB)'
             echo '- Successful builds are automatically published to Releases.'

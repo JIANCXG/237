@@ -10,7 +10,7 @@
 - 分区：UBI 从 `0x600000` 开始，大小为 `0x7000000`（112 MiB）；内核与根文件系统位于同一个 UBI 分区，112M 并非刷入后的剩余可用空间。
 - 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
 - LuCI HTTPS：统一使用 OpenSSL 后端。
-- 包含官方最新版中文版 PassWall2、Xray 与 Sing-box 双核心及 SmartDNS；PassWall2、基础软件源及 Go 工具链的上游提交统一固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。Sing-box 启用 QUIC 和 uTLS 支持。
+- 包含官方最新版中文版 PassWall、Xray 与 Sing-box 双核心及 SmartDNS；PassWall、基础软件源及 Go 工具链的上游提交统一固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。Sing-box 启用 QUIC 和 uTLS 支持。
 - 包含 adblock-fast、LuCI 管理界面及中文语言包；首次刷入后在服务页面配置规则并启用，建议使用精简域名名单以控制内存占用。
 - 不包含 Samba4 文件共享、网络唤醒和 WireGuard。
 - 保留 initramfs，同时生成 MTK U-Boot 布局的 `factory.bin` 刷入镜像和 `sysupgrade.bin` 升级镜像。
@@ -24,13 +24,13 @@
 3. 点击 **Run workflow**，使用 `openwrt-24.10-6.6` 分支。
 4. 编译并校验成功后，`publish` 任务自动创建 **Release** 并上传固件，标题标注 **MTK U-Boot 112M 大分区**；到仓库的 **Releases** 页面下载附件。Actions 中同时保留 **xiaomi-ax3000t-mtkuboot-112m-firmware** 产物 30 天。
 
-流程与 `JIANCXG/hanwckf` 一致：检查上游 → 编译校验 → 发布 Release → 记录成功版本。每次发布使用 `ax3000t-passwall2-运行ID-尝试次数` 唯一标签，发布说明记录精确源码提交及 PassWall2、依赖包和 Go 工具链版本。固件、软件包清单、构建配置和上游版本文件平铺上传，并附带覆盖全部附件的 `sha256sums`。
+流程与 `JIANCXG/hanwckf` 一致：检查上游 → 编译校验 → 发布 Release → 记录成功版本。每次发布使用 `ax3000t-passwall-运行ID-尝试次数` 唯一标签，发布说明记录精确源码提交及 PassWall、依赖包和 Go 工具链版本。固件、软件包清单、构建配置和上游版本文件平铺上传，并附带覆盖全部附件的 `sha256sums`。
 
-工作流从唯一预设生成 `.config`，并检查 mtkuboot 设备选择、厂商无线驱动、PassWall2、Xray、Sing-box 及 adblock-fast（含中文界面）是否包含、Samba4 等已移除功能是否禁用，以及该布局的 factory 和 sysupgrade 镜像是否生成。
+工作流从唯一预设生成 `.config`，并检查 mtkuboot 设备选择、厂商无线驱动、PassWall、Xray、Sing-box 及 adblock-fast（含中文界面）是否包含、Samba4 等已移除功能是否禁用，以及该布局的 factory 和 sysupgrade 镜像是否生成。
 
-## PassWall2 自动更新
+## PassWall 自动更新
 
-`Check PassWall2 updates every 3 days` 工作流每隔至少 72 小时检查官方 PassWall2、配套依赖包、Go 1.27 工具链，以及 packages、luci、routing、telephony 四个基础软件源的上游提交。与 `hanwckf` 相同，GitHub 每小时第 17 分钟唤醒工作流，未满 72 小时跳过上游查询；此方式保证跨月时不会缩短检查间隔，实际执行可能受 GitHub 调度延迟影响。
+`Check PassWall updates every 3 days` 工作流每隔至少 72 小时检查官方 PassWall、配套依赖包、Go 1.27 工具链，以及 packages、luci、routing、telephony 四个基础软件源的上游提交。与 `hanwckf` 相同，GitHub 每小时第 17 分钟唤醒工作流，未满 72 小时跳过上游查询；此方式保证跨月时不会缩短检查间隔，实际执行可能受 GitHub 调度延迟影响。
 
 全部上游查询成功后，如发现任一上游有新提交，则统一更新固定版本、提交到当前默认分支并编译发布固件；与上次成功发布的源码、配置及固定版本相同时不编译。仅在 Release 发布成功后更新 `.github/ax3000t-last-success.json`，检查时间不作为编译成功标记。检查失败不推进时间，下次唤醒时重试；编译或发布失败则保持待构建状态，下次每小时唤醒时使用固定版本重试。也可在 Actions 重新运行失败任务，或手动运行检查工作流并勾选 `build` 强制编译。手动检查会绕过 72 小时间隔。修改工作流、构建脚本、AX3000T 配置或 feeds 时也会触发检查与构建。此流程不会自动刷写路由器。
 
@@ -44,7 +44,7 @@ Go 工具链使用 `sbwml/packages_lang_golang` 的 `27.x` 分支（固定提交
 - `*xiaomi_mi-router-ax3000t-mtkuboot-squashfs-sysupgrade.bin`：该布局下的系统升级镜像。
 - AX3000T 的其他生成文件、校验信息及构建信息。
 - `ax3000t.build.config`：编译实际使用的完整配置。
-- `passwall-upstream.json`：PassWall2、依赖包和 Go 工具链的固定提交及最近检查时间。
+- `passwall-upstream.json`：PassWall、依赖包和 Go 工具链的固定提交及最近检查时间。
 
 这些镜像仅适用于 MTK U-Boot（`mtkuboot`）112M 大分区布局，不适用于原厂布局或 OpenWrt U-Boot（`ubootmod`）布局。原厂设备需要先按对应教程完成引导与布局迁移，不能直接把此固件当作原厂布局升级包；`factory.bin` 也不是小米官方网页升级包。
 

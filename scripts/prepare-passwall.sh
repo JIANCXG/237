@@ -16,10 +16,10 @@ mkdir -p feeds/packages/lang/golang
 git -C "$go_source" archive HEAD | tar -x -C feeds/packages/lang/golang
 ./scripts/feeds update -i packages
 
-# feeds.conf.default orders the official PassWall2 sources before distro duplicates.
+# feeds.conf.default orders the official PassWall sources before distro duplicates.
 ./scripts/feeds install -a
 ./scripts/feeds install -a -f -p passwall_packages
 ./scripts/feeds install -a -f -p passwall_luci
-test "$(readlink -f package/feeds/passwall_luci/luci-app-passwall2)" = "$PWD/feeds/passwall_luci/luci-app-passwall2"
+test "$(readlink -f package/feeds/passwall_luci/luci-app-passwall)" = "$PWD/feeds/passwall_luci/luci-app-passwall"
 test "$(readlink -f package/feeds/passwall_packages/xray-core)" = "$PWD/feeds/passwall_packages/xray-core"
 test "$(readlink -f package/feeds/passwall_packages/sing-box)" = "$PWD/feeds/passwall_packages/sing-box"
