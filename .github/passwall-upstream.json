@@ -1,7 +1,7 @@
 {
   "checked_at": "2026-10-29T07:07:28+00:00",
   "commits": {
-    "passwall_luci": "ff82e10c6b380104d06709b1bff7e9dea365daf3",
+    "passwall_luci": "d08e7f88fcb5c7f94b870f7281db0045a0477293",
     "passwall_packages": "19b6d1133fd861312659b3be38f19d52aaf3facf",
     "golang": "cd8953c31e0f64ea2853f87bb0f32256646a160d",
     "packages": "27a0f631a93f63bff9865526a9b4a74a10ca82f5",

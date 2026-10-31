@@ -55,7 +55,7 @@ jobs:
           make defconfig
           cp .config ax3000t.build.config
           grep -qx 'CONFIG_PACKAGE_smartdns=y' .config
-          for symbol in PACKAGE_luci-app-passwall_INCLUDE_SingBox PACKAGE_sing-box SING_BOX_BUILD_QUIC SING_BOX_BUILD_UTLS; do
+          for symbol in PACKAGE_luci-app-passwall2_Basic_Core_All PACKAGE_sing-box SING_BOX_BUILD_QUIC SING_BOX_BUILD_UTLS; do
             grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
           done
 
@@ -66,9 +66,13 @@ jobs:
           test "$(grep -c '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_.*=y$' .config)" -eq 1
 
           # Fail before compiling if configuration resolution changes the Wi-Fi stack.
-          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall PACKAGE_luci-i18n-passwall-zh-cn PACKAGE_luci-app-passwall_INCLUDE_Xray PACKAGE_xray-core PACKAGE_luci-ssl-openssl PACKAGE_libustream-openssl; do
+          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall2 PACKAGE_luci-i18n-passwall2-zh-cn PACKAGE_luci-app-passwall2_Nftables_Transparent_Proxy PACKAGE_xray-core PACKAGE_adblock-fast PACKAGE_luci-app-adblock-fast PACKAGE_luci-i18n-adblock-fast-zh-cn PACKAGE_luci-ssl-openssl PACKAGE_libustream-openssl; do
             grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
           done
+          if grep -Eq '^CONFIG_PACKAGE_luci-app-passwall=y$' .config; then
+            echo 'PassWall must be replaced by PassWall2'
+            exit 1
+          fi
           if grep -E '^CONFIG_PACKAGE_(luci-ssl|libustream-mbedtls|libustream-wolfssl)=y$' .config; then
             echo "Conflicting LuCI HTTPS/libustream backend selected"
             exit 1
@@ -98,9 +102,13 @@ jobs:
           # TARGET_MULTI_PROFILE emits a target-level manifest without a device suffix.
           manifests=(bin/targets/mediatek/filogic/*.manifest)
           test "${#manifests[@]}" -eq 1
-          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core sing-box luci-ssl-openssl; do
+          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall2 luci-i18n-passwall2-zh-cn xray-core sing-box adblock-fast luci-app-adblock-fast luci-i18n-adblock-fast-zh-cn luci-ssl-openssl; do
             grep -q "^${package} " "${manifests[0]}" || { echo "Missing firmware package: $package"; exit 1; }
           done
+          if grep -q '^luci-app-passwall ' "${manifests[0]}"; then
+            echo 'Unexpected PassWall package in firmware'
+            exit 1
+          fi
           grep -Eq '^libustream-openssl[^ ]* ' "${manifests[0]}"
           test "$(grep -Ec '^libustream-(openssl|mbedtls|wolfssl)[^ ]* ' "${manifests[0]}")" -eq 1
           if grep -Eq '^(kmod-mt7915e|kmod-mt7981-firmware|mt7981-wo-firmware|wpad-openssl) ' "${manifests[0]}"; then
@@ -131,7 +139,7 @@ jobs:
             exit 1
           fi
           # Verify installed versions against the pinned upstream recipes.
-          for spec in 'luci-app-passwall:passwall_luci/luci-app-passwall' 'xray-core:passwall_packages/xray-core' 'sing-box:passwall_packages/sing-box' 'smartdns:passwall_packages/smartdns'; do
+          for spec in 'luci-app-passwall2:passwall_luci/luci-app-passwall2' 'xray-core:passwall_packages/xray-core' 'sing-box:passwall_packages/sing-box' 'smartdns:passwall_packages/smartdns'; do
             package=${spec%%:*}
             recipe=${spec#*:}
             version=$(sed -n 's/^PKG_VERSION:=//p' "feeds/$recipe/Makefile")
@@ -186,7 +194,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SOURCE: ${{ needs.build.outputs.source_commit }}
       FINGERPRINT: ${{ needs.build.outputs.fingerprint }}
-      RELEASE_TAG: ax3000t-passwall-${{ github.run_id }}-${{ github.run_attempt }}
+      RELEASE_TAG: ax3000t-passwall2-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -201,7 +209,7 @@ jobs:
           cat > release-notes.md <<EOF
           小米 AX3000T MTK U-Boot（mtkuboot）112M 大分区固件，OpenWrt 24.10 / Linux 6.6。
 
-          包含联发科厂商无线驱动、中文版 PassWall、Xray、Sing-box 和 SmartDNS。
+          包含联发科厂商无线驱动、中文版 PassWall2、Xray、Sing-box、SmartDNS 和 adblock-fast（中文管理界面）。
           squashfs-factory.bin 用于匹配该布局的 MTK U-Boot 刷入流程，sysupgrade.bin 用于该布局的后续升级。
           仅适用于 MTK U-Boot 112M 大分区布局，不适用于原厂布局或 OpenWrt U-Boot（ubootmod）布局。
           UBI 分区起始地址 0x600000，大小 0x7000000（112 MiB）；112M 并非刷入后的剩余可用空间。
@@ -221,7 +229,7 @@ jobs:
           PY
           gh release create "$RELEASE_TAG" firmware/* \
             --repo "$GITHUB_REPOSITORY" --target "$SOURCE" \
-            --title "AX3000T MTK U-Boot 112M 大分区 PassWall $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" \
+            --title "AX3000T MTK U-Boot 112M 大分区 PassWall2 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')" \
             --notes-file release-notes.md
           echo "Release: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
       - name: Record successful release
@@ -234,5 +242,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .github/ax3000t-last-success.json
-          git commit -m 'build: record successful AX3000T PassWall release'
+          git commit -m 'build: record successful AX3000T PassWall2 release'
           git push origin HEAD:openwrt-24.10-6.6
