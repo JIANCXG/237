@@ -66,7 +66,7 @@ jobs:
           test "$(grep -c '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_.*=y$' .config)" -eq 1
 
           # Fail before compiling if configuration resolution changes the Wi-Fi stack.
-          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall PACKAGE_luci-i18n-passwall-zh-cn PACKAGE_luci-app-passwall_Nftables_Transparent_Proxy PACKAGE_xray-core PACKAGE_adblock-fast PACKAGE_luci-app-adblock-fast PACKAGE_luci-i18n-adblock-fast-zh-cn PACKAGE_luci-ssl-openssl PACKAGE_libustream-openssl; do
+          for symbol in TARGET_mediatek_filogic TARGET_ROOTFS_INITRAMFS MTK_FIRST_IF_MT7981 MTK_CONNINFRA_APSOC_MT7981 PACKAGE_kmod-mt_wifi PACKAGE_kmod-conninfra PACKAGE_kmod-warp PACKAGE_mtwifi-cfg PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-passwall PACKAGE_luci-i18n-passwall-zh-cn PACKAGE_luci-app-passwall_Nftables_Transparent_Proxy PACKAGE_xray-core PACKAGE_gawk PACKAGE_grep PACKAGE_sed PACKAGE_coreutils-sort PACKAGE_adblock-fast PACKAGE_luci-app-adblock-fast PACKAGE_luci-i18n-adblock-fast-zh-cn PACKAGE_luci-ssl-openssl PACKAGE_libustream-openssl; do
             grep -qx "CONFIG_${symbol}=y" .config || { echo "Missing required option: $symbol"; exit 1; }
           done
           if grep -Eq '^CONFIG_PACKAGE_luci-app-passwall2=y$' .config; then
@@ -102,7 +102,7 @@ jobs:
           # TARGET_MULTI_PROFILE emits a target-level manifest without a device suffix.
           manifests=(bin/targets/mediatek/filogic/*.manifest)
           test "${#manifests[@]}" -eq 1
-          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core sing-box adblock-fast luci-app-adblock-fast luci-i18n-adblock-fast-zh-cn luci-ssl-openssl; do
+          for package in kmod-mt_wifi kmod-conninfra kmod-warp mtwifi-cfg luci-app-mtwifi-cfg luci-app-passwall luci-i18n-passwall-zh-cn xray-core sing-box gawk grep sed coreutils-sort adblock-fast luci-app-adblock-fast luci-i18n-adblock-fast-zh-cn luci-ssl-openssl; do
             grep -q "^${package} " "${manifests[0]}" || { echo "Missing firmware package: $package"; exit 1; }
           done
           if grep -q '^luci-app-passwall2 ' "${manifests[0]}"; then
@@ -209,7 +209,7 @@ jobs:
           cat > release-notes.md <<EOF
           小米 AX3000T MTK U-Boot（mtkuboot）112M 大分区固件，OpenWrt 24.10 / Linux 6.6。
 
-          包含联发科厂商无线驱动、中文版 PassWall、Xray、Sing-box、SmartDNS 和 adblock-fast（中文管理界面）。
+          包含联发科厂商无线驱动、中文版 PassWall、Xray、Sing-box、SmartDNS 和 adblock-fast（中文管理界面），并内置其推荐的 gawk、grep、sed 和 coreutils-sort 工具。
           squashfs-factory.bin 用于匹配该布局的 MTK U-Boot 刷入流程，sysupgrade.bin 用于该布局的后续升级。
           仅适用于 MTK U-Boot 112M 大分区布局，不适用于原厂布局或 OpenWrt U-Boot（ubootmod）布局。
           UBI 分区起始地址 0x600000，大小 0x7000000（112 MiB）；112M 并非刷入后的剩余可用空间。

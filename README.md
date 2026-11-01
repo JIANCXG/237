@@ -11,7 +11,7 @@
 - 无线：联发科 `mt_wifi` 厂商驱动及 `mtwifi-cfg` 管理组件。
 - LuCI HTTPS：统一使用 OpenSSL 后端。
 - 包含官方最新版中文版 PassWall、Xray 与 Sing-box 双核心及 SmartDNS；PassWall、基础软件源及 Go 工具链的上游提交统一固定在 `feeds.conf.default` 与 `.github/passwall-upstream.json`。Sing-box 启用 QUIC 和 uTLS 支持。
-- 包含 adblock-fast、LuCI 管理界面及中文语言包；首次刷入后在服务页面配置规则并启用，建议使用精简域名名单以控制内存占用。
+- 包含 adblock-fast、LuCI 管理界面、中文语言包及其推荐的规则处理工具 `gawk`、`grep`、`sed`、`coreutils-sort`；首次刷入后在服务页面配置规则并启用，建议使用精简域名名单以控制内存占用。
 - 不包含 Samba4 文件共享、网络唤醒和 WireGuard。
 - 保留 initramfs，同时生成 MTK U-Boot 布局的 `factory.bin` 刷入镜像和 `sysupgrade.bin` 升级镜像。
 
