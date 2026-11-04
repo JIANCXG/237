@@ -1,10 +1,10 @@
 {
-  "checked_at": "2026-11-01T03:38:23+00:00",
+  "checked_at": "2026-11-04T09:15:04+00:00",
   "commits": {
-    "passwall_luci": "c873b70eee09541b8ed69c1dcf750ada5b5aeeb6",
+    "passwall_luci": "0b969d5a49743a9725c8dc283b01753c5217dd0d",
     "passwall_packages": "da712cf06cf4e6fd39e147fb36e6ec936003fcc9",
     "golang": "cd8953c31e0f64ea2853f87bb0f32256646a160d",
-    "packages": "68e61d7001247807a0e15d17902b4169bbfc1104",
+    "packages": "841b9ee7152af411a0761a08057408fcded37051",
     "luci": "d72e293e6fd698af75510b9018fb7e154ae219cc",
     "routing": "00619bc7bc60d8b67ecc490121e45298b122cd6e",
     "telephony": "695f4f4a733dfaf10922d24bf9dbdfd509b8a6d4"
