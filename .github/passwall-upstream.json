@@ -1,8 +1,8 @@
 {
-  "checked_at": "2026-11-07T10:12:28+00:00",
+  "checked_at": "2026-11-10T17:51:24+00:00",
   "commits": {
-    "passwall_luci": "82678e8e054b274d487780fdf5d24ddb7db5b85b",
-    "passwall_packages": "da712cf06cf4e6fd39e147fb36e6ec936003fcc9",
+    "passwall_luci": "5f03390adf4561c2375def4b5406645ecf3f96a9",
+    "passwall_packages": "4dad9be70a37343ad3ef88cd3722576e8e234edf",
     "golang": "cd8953c31e0f64ea2853f87bb0f32256646a160d",
     "packages": "171d5f9203379f77693807d7283515a873f95df9",
     "luci": "d72e293e6fd698af75510b9018fb7e154ae219cc",
