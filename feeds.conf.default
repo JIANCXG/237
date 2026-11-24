@@ -1,6 +1,6 @@
-src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git^a880c9046f8bd5d2d4f1fb6b8f2e70968c463322
-src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git^b3cf8e768ba11d9172e9db7bdd6af17eaf8580f7
+src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git^a7e65d1d5d624f4b7910ba738ba7045fc2f534ce
+src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git^bc622894605a7b4d88028cb172e9807c57e6cdca
 src-git packages https://github.com/immortalwrt/packages.git^171d5f9203379f77693807d7283515a873f95df9
 src-git luci https://github.com/immortalwrt/luci.git^cc142cd196d425d9f14f9c18f072913730b642ce
-src-git routing https://github.com/openwrt/routing.git^00619bc7bc60d8b67ecc490121e45298b122cd6e
+src-git routing https://github.com/openwrt/routing.git^6310a34d521da859ad577ab734afef85304c25d8
 src-git telephony https://github.com/openwrt/telephony.git^695f4f4a733dfaf10922d24bf9dbdfd509b8a6d4
